@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -166,9 +167,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     onPressed: () {
-                      // Handle login action
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (_) => const HomeScreen()),
+                      );
                     },
-                    child: const Text('Log In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    child: const Text('Log In', style: TextStyle(fontSize: 16, color: Colors.white70, fontWeight: FontWeight.w600)),
                   ),
                 ),
 

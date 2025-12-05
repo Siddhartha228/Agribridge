@@ -158,11 +158,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     onPressed: () {
-                      // TODO: wire up registration logic
+                      // TODO: registration logic
                     },
                     child: const Text(
                       'Sign Up',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: TextStyle(fontSize: 16, color: Colors.white70, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
