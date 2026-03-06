@@ -30,6 +30,40 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
        _userSessionService = userSessionService,
        _tokenService = tokenService;
 
+  bool _isConnectionIssue(DioException e) {
+    return e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.receiveTimeout;
+  }
+
+  bool _isLoopbackServer(String url) {
+    final host = Uri.tryParse(url)?.host.toLowerCase().trim();
+    if (host == null || host.isEmpty) return false;
+
+    return host == 'localhost' ||
+        host == '127.0.0.1' ||
+        host == '::1' ||
+        host == '10.0.2.2';
+  }
+
+  Future<Response<dynamic>> _postWithConnectionRecovery(
+    String path, {
+    dynamic data,
+  }) async {
+    try {
+      return await _apiClient.post(path, data: data);
+    } on DioException catch (e) {
+      if (!_isConnectionIssue(e) ||
+          !_isLoopbackServer(ApiEndpoints.serverUrl)) {
+        rethrow;
+      }
+
+      await ApiEndpoints.refreshResolution();
+      if (_isLoopbackServer(ApiEndpoints.serverUrl)) rethrow;
+      return _apiClient.post(path, data: data);
+    }
+  }
+
   String? _extractImagePath(Map<String, dynamic> data) {
     final candidates = [
       data['profilePicture'],
@@ -64,9 +98,7 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
       }
     }
 
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.connectionError ||
-        e.type == DioExceptionType.receiveTimeout) {
+    if (_isConnectionIssue(e)) {
       return Exception(
         'Cannot reach server at ${ApiEndpoints.serverUrl}. Check Wi-Fi and firewall (port 5000).',
       );
@@ -83,7 +115,7 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
   @override
   Future<AuthApiModel?> login(String email, String password) async {
     try {
-      final response = await _apiClient.post(
+      final response = await _postWithConnectionRecovery(
         ApiEndpoints.customerLogin,
         data: {'email': email, 'password': password},
       );
@@ -117,9 +149,7 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
         throw Exception('Invalid email or password');
       } else if (e.response?.statusCode == 404) {
         throw Exception('User not found');
-      } else if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.connectionError ||
-          e.type == DioExceptionType.receiveTimeout) {
+      } else if (_isConnectionIssue(e)) {
         throw Exception(
           'Cannot reach server at ${ApiEndpoints.serverUrl}. Check Wi-Fi and firewall (port 5000).',
         );
@@ -131,7 +161,7 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
   @override
   Future<AuthApiModel> register(AuthApiModel user) async {
     try {
-      final response = await _apiClient.post(
+      final response = await _postWithConnectionRecovery(
         ApiEndpoints.customerRegister,
         data: user.toJson(),
       );
@@ -154,9 +184,7 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
       }
       return user;
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.connectionError ||
-          e.type == DioExceptionType.receiveTimeout) {
+      if (_isConnectionIssue(e)) {
         throw Exception(
           'Cannot reach server at ${ApiEndpoints.serverUrl}. Check Wi-Fi and firewall (port 5000).',
         );

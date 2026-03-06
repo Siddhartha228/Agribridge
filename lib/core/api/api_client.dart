@@ -12,7 +12,7 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(
     userSessionService: userSessionService,
     onUnauthorized: () {
-      // Example: redirect to login or show dialog
+      
       debugPrint('Session expired! Redirect to login.');
     },
   );
@@ -90,60 +90,82 @@ class ApiClient {
 
   Dio get dio => _dio;
 
+  void _syncBaseUrlIfNeeded() {
+    final resolvedBaseUrl = ApiEndpoints.baseUrl;
+    if (_dio.options.baseUrl != resolvedBaseUrl) {
+      _dio.options.baseUrl = resolvedBaseUrl;
+    }
+  }
+
   // HTTP Methods
   Future<Response> get(
     String path, {
     Map<String, dynamic>? queryParameters,
     Options? options,
-  }) => _dio.get(path, queryParameters: queryParameters, options: options);
+  }) {
+    _syncBaseUrlIfNeeded();
+    return _dio.get(path, queryParameters: queryParameters, options: options);
+  }
 
   Future<Response> post(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Options? options,
-  }) => _dio.post(
-    path,
-    data: data,
-    queryParameters: queryParameters,
-    options: options,
-  );
+  }) {
+    _syncBaseUrlIfNeeded();
+    return _dio.post(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
+  }
 
   Future<Response> put(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Options? options,
-  }) => _dio.put(
-    path,
-    data: data,
-    queryParameters: queryParameters,
-    options: options,
-  );
+  }) {
+    _syncBaseUrlIfNeeded();
+    return _dio.put(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
+  }
 
   Future<Response> delete(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Options? options,
-  }) => _dio.delete(
-    path,
-    data: data,
-    queryParameters: queryParameters,
-    options: options,
-  );
+  }) {
+    _syncBaseUrlIfNeeded();
+    return _dio.delete(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
+  }
 
   Future<Response> uploadFile(
     String path, {
     required FormData formData,
     Options? options,
     ProgressCallback? onSendProgress,
-  }) => _dio.post(
-    path,
-    data: formData,
-    options: options,
-    onSendProgress: onSendProgress,
-  );
+  }) {
+    _syncBaseUrlIfNeeded();
+    return _dio.post(
+      path,
+      data: formData,
+      options: options,
+      onSendProgress: onSendProgress,
+    );
+  }
 }
 
 // Auth Interceptor
